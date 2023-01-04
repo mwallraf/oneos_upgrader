@@ -1,0 +1,39 @@
+---
+# calculate facts and statuses
+
+# indicates if the upgrades are required - always false if the version is not defined
+- name: "SET FACT > calculate if upgrades are required"
+  ansible.builtin.set_fact:
+    upgrade_required_for_os: "{{ false if (wanted_os_version is not defined or not wanted_os_version) else false if pre_check_system[0].SOFTWARE == wanted_os_version else true }}"
+    upgrade_required_for_boot: "{{ false if (wanted_boot_version is not defined or not wanted_boot_version) else false if pre_check_system[0].BOOT_VERSION == wanted_boot_version else true }}"
+    upgrade_required_for_recovery: "{{ false if (wanted_recovery_version is not defined or not wanted_recovery_version) else false if pre_check_system[0].RECOVERY_VERSION == wanted_recovery_version else true }}"
+
+# check if SCP is already configured
+- name: "SET FACT > scp_is_enabled"
+  ansible.builtin.set_fact:
+    scp_is_enabled: "{{ true if fact_ssh[0].SCP is defined and fact_ssh[0].SCP == 'enabled' else false }}"
+
+# check if the files already exist on the disk
+- name: "SET FACT > check if the files exist on disk or software bank"
+  ansible.builtin.set_fact:
+    os_file_exists_on_disk: "{{ true if (wanted_os_file is defined and fact_ls_bsa_binaries is defined and fact_ls_bsa_binaries | selectattr('FILE', 'eq', wanted_os_file) | list ) else false }}"
+    boot_file_exists_on_disk: "{{ true if (wanted_boot_file is defined and fact_ls_bsa_binaries is defined and fact_ls_bsa_binaries | selectattr('FILE', 'eq', wanted_boot_file) | list ) else false }}"
+    recovery_file_exists_on_disk: "{{ true if (wanted_recovery_file is defined and fact_ls_bsa_binaries is defined and fact_ls_bsa_binaries | selectattr('FILE', 'eq', wanted_recovery_file) | list ) else false }}"
+    os_is_in_active_software_bank: "{{ true if (fact_software_image is defined and fact_software_image | selectattr('BANK', 'eq', 'Active') | selectattr('SOFTWARE', 'eq', wanted_os_version) | list ) else false }}"
+    os_is_in_alternate_software_bank: "{{ true if (fact_software_image is defined and fact_software_image | selectattr('BANK', 'eq', 'Alternate') | selectattr('SOFTWARE', 'eq', wanted_os_version) | list ) else false }}"
+
+# calculate if files should be uploaded
+- name: "SET FACT > file upload requirement"
+  ansible.builtin.set_fact:
+    upload_required_os_file: "{{ false if (upgrade_required_for_os is false or not wanted_os_file_stats or os_file_exists_on_disk is true or os_is_in_active_software_bank is true or os_is_in_alternate_software_bank is true) else true }}"
+    upload_required_boot_file: "{{ false if (upgrade_required_for_boot is false or not wanted_boot_file_stats or boot_file_exists_on_disk is true) else true }}"
+    upload_required_recovery_file: "{{ false if (upgrade_required_for_recovery is false or not wanted_recovery_file_stats or recovery_file_exists_on_disk is true) else true }}"
+
+# calculate total required disk space - if the file should not be uploaded then it will not be calculated as required disk space
+- name: "SET FACT > recovery_file_exists_on_disk"
+  ansible.builtin.set_fact:
+    disk_space_required_os_file: "{{ 0 if (upload_required_os_file is false or not wanted_os_file_stats) else wanted_os_file_stats['size']|int }}"
+    disk_space_required_boot_file: "{{ 0 if (upload_required_boot_file is false or not wanted_boot_file_stats) else wanted_boot_file_stats['size']|int }}"
+    disk_space_required_recovery_file: "{{ 0 if (upload_required_recovery_file is false or not wanted_recovery_file_stats) else wanted_recovery_file_stats['size']|int }}"
+    disk_space_required_boot_and_recovery_file: "{% set total=0 + (0 if (upload_required_recovery_file is false or not wanted_recovery_file_stats) else wanted_recovery_file_stats['size']|int) + (0 if (upload_required_boot_file is false or not wanted_boot_file_stats) else wanted_boot_file_stats['size']|int) %}{{ total|int }}"
+    disk_space_required_total: "{% set total=0 + (0 if (upload_required_os_file is false or not wanted_os_file_stats) else wanted_os_file_stats['size']|int) + (0 if (upload_required_recovery_file is false or not wanted_recovery_file_stats) else wanted_recovery_file_stats['size']|int) + (0 if (upload_required_boot_file is false or not wanted_boot_file_stats) else wanted_boot_file_stats['size']|int) %}{{ total| int }}"

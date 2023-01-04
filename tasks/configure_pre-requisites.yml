@@ -1,0 +1,9 @@
+---
+# configure pre-requisites for copying files etc
+
+- name: CONFIGURE PRE-REQUISITES > enabled SCP
+  ansible.netcommon.cli_config:
+    config: ip scp server enable
+    diff_replace: config
+  when: scp_is_enabled is defined and scp_is_enabled is false
+  ignore_errors: true

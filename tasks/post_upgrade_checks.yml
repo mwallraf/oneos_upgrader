@@ -1,0 +1,8 @@
+---
+
+- name: "CHECK > get system details"
+  ansible.utils.cli_parse:
+    command: show system status
+    parser:
+      name: ansible.utils.textfsm
+    set_fact: post_check_system

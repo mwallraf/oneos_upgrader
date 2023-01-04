@@ -1,0 +1,113 @@
+---
+# copy all the files to the router flash + do file verification
+
+# if boot+recovery files should be uploaded and also os file then there may be disk space issues
+# in this case we first upload boot+recovery and may skip the OS file until after the BOOT upgrade
+
+- name: "UPLOAD FILES > assert that there is enough disk space for uploading the boot and recovery files"
+  ansible.builtin.assert:
+    that: "disk_space_sufficient_for_boot_and_recovery_files is true"
+    success_msg: "OK: sufficient disk space for uploading the boot and/or recovery files"
+    fail_msg: "ERROR: not sufficient disk space for uploading the boot and/or recovery files"
+  ignore_errors: true
+  when: upload_required_boot_file is true or upload_required_recovery_file is true
+
+- block:
+    # upload the boot image
+    - name: "UPLOAD FILES > upload the boot image file (timeout = {{ timeout_wait_for_copy }})"
+      ansible.netcommon.net_put:
+        src: "{{ software_path }}/{{ wanted_boot_file }}"
+        dest: "/BSA/binaries/{{ wanted_boot_file }}"
+      vars:
+        ansible_command_timeout: "{{ timeout_wait_for_copy }}"
+      when: upload_required_boot_file is true
+
+    - block:
+        - name: "UPLOAD FILES > verify boot image"
+          ansible.netcommon.cli_command:
+            command: "show boot-file info /BSA/binaries/{{ wanted_boot_file }}"
+          register: output
+          vars:
+            ansible_command_timeout: "{{ timeout_wait_for_command }}"
+
+        - name: "UPLOAD FILES > assert boot image verification"
+          ansible.builtin.assert:
+            that: "'file is ok' in output.stdout.lower()"
+            success_msg: "OK: boot file has been uploaded and verified"
+            fail_msg: "ERROR: the boot file has been uploaded but is invalid - abort"
+
+        - name: "UPLOAD FILES > set upload_done_for_boot_file"
+          ansible.builtin.set_fact:
+            upload_done_for_boot_file: "{{ true }}"
+
+      when: verify_uploaded_files is true
+
+    # upload the recovery image
+    - name: "UPLOAD FILES > upload the recovery image file (timeout = {{ timeout_wait_for_copy }})"
+      ansible.netcommon.net_put:
+        src: "{{ software_path }}/{{ wanted_recovery_file }}"
+        dest: "/BSA/binaries/{{ wanted_recovery_file }}"
+      vars:
+        ansible_command_timeout: "{{ timeout_wait_for_copy }}"
+      when: upload_required_recovery_file is true
+
+    - block:
+        - name: "UPLOAD FILES > verify recovery image"
+          ansible.netcommon.cli_command:
+            command: "show boot-file info /BSA/binaries/{{ wanted_recovery_file }}"
+          register: output
+          vars:
+            ansible_command_timeout: "{{ timeout_wait_for_command }}"
+
+        - name: "UPLOAD FILES > assert recovery image verification"
+          ansible.builtin.assert:
+            that: "'file is ok' in output.stdout.lower()"
+            success_msg: "OK: recovery file has been uploaded and verified"
+            fail_msg: "ERROR: the recovery file has been uploaded but is invalid - abort"
+
+        - name: "UPLOAD FILES > set upload_done_for_recovery_file"
+          ansible.builtin.set_fact:
+            upload_done_for_recovery_file: "{{ true }}"
+
+      when: verify_uploaded_files is true
+
+  when: disk_space_sufficient_for_boot_and_recovery_files is true and (upload_required_boot_file is true or upload_required_recovery_file is true)
+
+- name: "UPLOAD FILES > assert that there is enough disk space for uploading the software file"
+  ansible.builtin.assert:
+    that: "disk_space_sufficient_for_all_files is true"
+    success_msg: "OK: sufficient disk space for uploading the software file"
+    fail_msg: "ERROR: not sufficient disk space for uploading the software file"
+  ignore_errors: true
+  when: upload_required_os_file is true
+
+- block:
+    # upload the OS files
+    - name: "UPLOAD FILES > upload the software image file (timeout = {{ timeout_wait_for_copy }})"
+      ansible.netcommon.net_put:
+        src: "{{ software_path }}/{{ wanted_os_file }}"
+        dest: "/BSA/binaries/{{ wanted_os_file }}"
+      vars:
+        ansible_command_timeout: "{{ timeout_wait_for_copy }}"
+
+    - block:
+        - name: "UPLOAD FILES > verify OS image"
+          ansible.netcommon.cli_command:
+            command: "show soft-file info /BSA/binaries/{{ wanted_os_file }}"
+          register: output
+          vars:
+            ansible_command_timeout: "{{ timeout_wait_for_command }}"
+
+        - name: "UPLOAD FILES > assert OS image verification"
+          ansible.builtin.assert:
+            that: "'file is ok' in output.stdout.lower()"
+            success_msg: "OK: OS file has been uploaded and verified"
+            fail_msg: "ERROR: the OS file has been uploaded but is invalid - abort"
+
+        - name: "UPLOAD FILES > set upload_done_for_os_file"
+          ansible.builtin.set_fact:
+            upload_done_for_os_file: "{{ true }}"
+
+      when: verify_uploaded_files is true
+
+  when: disk_space_sufficient_for_all_files is true and upload_required_os_file is true

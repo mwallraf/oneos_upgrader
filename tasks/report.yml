@@ -1,0 +1,14 @@
+---
+- name: "REPORT > get host details"
+  debug:
+    msg: "{{ lookup('ansible.builtin.template', './report_single_host.j2') }}"
+  tags:
+    - report
+# - name: "REPORT > debug system details"
+#   debug:
+#     msg: "System information BEFORE upgrade: {{ pre_check_system }}"
+
+# - name: "REPORT > debug system details"
+#   debug:
+#     msg: "System information AFTER upgrade: {{ post_check_system }}"
+#   when: "post_check_system is defined"

@@ -1,0 +1,12 @@
+---
+- name: "GATHER FACTS > show memory"
+  ansible.utils.cli_parse:
+    command: show memory
+    parser:
+      name: ansible.utils.textfsm
+  register: show_memory_output
+
+# post-process the show_memory_output
+- name: "SET FACT > fact_memory"
+  ansible.builtin.set_fact:
+    fact_memory: "{{ show_memory_output.parsed[0]|normalize_memory('b') }}"

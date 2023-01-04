@@ -1,0 +1,22 @@
+---
+# reboot a cpe and wait until it comes back
+
+# we use reboot after.. to avoid extra prompts
+- name: REBOOT > reboot and wait
+  ansible.netcommon.cli_command:
+    command: "{{ item }}"
+  loop:
+    - "write mem"
+    - "reboot after 3"
+  vars:
+    ansible_command_timeout: "{{ timeout_wait_for_command }}"
+
+- name: REBOOT > reset the connection
+  meta: reset_connection
+
+- name: REBOOT > wait for device to come back (wait time:{{ timeout_wait_for_reboot }})
+  wait_for_connection:
+    delay: 10
+    sleep: 10
+    timeout: "{{ timeout_wait_for_reboot }}"
+    connect_timeout: 30

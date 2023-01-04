@@ -1,0 +1,23 @@
+---
+# gather oneos generic facts, this should always run
+
+- name: "GATHER FACTS > hostname"
+  ansible.utils.cli_parse:
+    command: hostname
+    parser:
+      name: ansible.utils.textfsm
+    set_fact: fact_hostname
+
+- name: "GATHER FACTS > get system details"
+  ansible.utils.cli_parse:
+    command: show system status
+    parser:
+      name: ansible.utils.textfsm
+    set_fact: pre_check_system
+
+- name: "GATHER FACTS > get ssh details"
+  ansible.utils.cli_parse:
+    command: show ip ssh
+    parser:
+      name: ansible.utils.textfsm
+    set_fact: fact_ssh

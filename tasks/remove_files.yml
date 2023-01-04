@@ -1,0 +1,27 @@
+---
+# remove unncessary files if there is not sufficient space to copy all new files:
+#   all files in /BSA/binaries
+#     except:
+#        - if the file equals to wanted_os_file or wanted_boot_file or wanted_recovery_file
+#        - if the file equals to fact_bsaboot.BOOTFILE
+
+- block:
+    - name: REMOVE FILES > remove old files if there is not sufficient disk space
+      ansible.netcommon.cli_command:
+        command: "rm /BSA/binaries/{{ item['FILE'] }}"
+      when: "not ( (fact_bsaboot is defined and fact_bsaboot['BOOTFILE']|default('--') == item['FILE']) or (wanted_boot_file == item['FILE']) or (wanted_os_file == item['FILE']) or (wanted_recovery_file == item['FILE']) )"
+      loop: "{{ fact_ls_bsa_binaries }}"
+      vars:
+        ansible_command_timeout: "{{ timeout_wait_for_command }}"
+
+    - name: "REMOVE FILES > run disk and memory facts"
+      import_tasks:
+        file: "gather_disk_facts.yml"
+
+    - name: "REMOVE FILES > set calculated disk and memory facts"
+      import_tasks:
+        file: "set_calculated_disk_facts.yml"
+
+    # TODO: we need to include all gather_facts here ??
+
+  when: disk_space_sufficient_for_all_files is false

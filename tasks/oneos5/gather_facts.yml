@@ -1,0 +1,18 @@
+---
+# gather facts before starting any upgrades
+
+- name: "GATHER FACTS > cat /BSA/bsaBoot.inf"
+  ansible.utils.cli_parse:
+    command: cat /BSA/bsaBoot.inf
+    parser:
+      name: ansible.utils.textfsm
+      template_path: "{{ role_path }}/templates/oneos_cat_bsa_bsaboot_info.textfsm"
+    set_fact: fact_bsaboot
+
+- name: "GATHER FACTS > ls /BSA/binaries"
+  ansible.utils.cli_parse:
+    command: ls /BSA/binaries
+    parser:
+      name: ansible.utils.textfsm
+      template_path: "{{ role_path }}/templates/oneos_ls.textfsm"
+    set_fact: fact_ls_bsa_binaries

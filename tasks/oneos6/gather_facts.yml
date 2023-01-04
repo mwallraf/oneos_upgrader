@@ -1,0 +1,17 @@
+---
+# gather facts before starting any upgrades
+
+- name: "GATHER FACTS > show software-image"
+  ansible.utils.cli_parse:
+    command: show software-image
+    parser:
+      name: ansible.utils.textfsm
+    set_fact: fact_software_image
+
+- name: "GATHER FACTS > ls /BSA/binaries"
+  ansible.utils.cli_parse:
+    command: ls -l /BSA/binaries
+    parser:
+      name: ansible.utils.textfsm
+      template_path: "{{ role_path }}/templates/oneos_ls.textfsm"
+    set_fact: fact_ls_bsa_binaries

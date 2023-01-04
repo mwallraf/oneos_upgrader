@@ -1,0 +1,94 @@
+---
+# tasks file for oneos_upgrader
+
+- name: "MAIN > run os generic facts"
+  import_tasks:
+    file: "gather_facts.yml"
+  tags:
+    - always
+
+- name: "MAIN > get wanted file stats"
+  import_tasks:
+    file: "wanted_file_stats.yml"
+  tags:
+    - always
+
+- name: "MAIN > run disk and memory facts"
+  import_tasks:
+    file: "gather_disk_facts.yml"
+  tags:
+    - always
+
+- name: "MAIN > run os specific gather_facts tasks"
+  include_tasks:
+    file: "{{ role_path }}/tasks/oneos{{ pre_check_system[0].VERSION }}/gather_facts.yml"
+    apply:
+      tags:
+        - staging
+        - upgrade
+        - report
+  tags:
+    - staging
+    - upgrade
+    - report
+
+- name: "MAIN > set calculated facts"
+  import_tasks:
+    file: "set_calculated_facts.yml"
+  tags:
+    - always
+
+- name: "MAIN > set calculated disk and memory facts"
+  import_tasks:
+    file: "set_calculated_disk_facts.yml"
+  tags:
+    - always
+
+- name: "MAIN > configure pre-requisites"
+  import_tasks:
+    file: "configure_pre-requisites.yml"
+  tags:
+    - staging
+    - upgrade
+  when: auto_configure_pre_requisites is true
+
+# remove unnecessary files if the global switch is true and if there is not enough disk space to copy all necessary files
+- name: "MAIN > remove files"
+  import_tasks:
+    file: "remove_files.yml"
+  tags:
+    - staging
+    - upgrade
+    - remove
+  when: remove_unwanted_files is true and disk_space_sufficient_for_all_files is false
+
+# upload files if the global switch is true and if there are any files to be uploaded
+- name: "MAIN > upload files"
+  import_tasks:
+    file: "upload_files.yml"
+  tags:
+    - staging
+    - upgrade
+    - upload
+  when: upload_files is true and (upload_required_boot_file is true or upload_required_os_file is true or upload_required_recovery_file is true)
+
+# upgrade the router
+- name: "MAIN > upgrade router"
+  import_tasks:
+    file: "upgrade_router.yml"
+  tags:
+    - upgrade
+  when: upgrade_router is true and (upgrade_required_for_boot is true or upgrade_required_for_os is true or upgrade_required_for_recovery is true)
+
+- name: "MAIN > run post-check tasks"
+  import_tasks: post_upgrade_checks.yml
+  tags:
+    - postcheck
+    - upgrade
+
+- name: "MAIN > run reporting tasks"
+  import_tasks: report.yml
+  tags:
+    - staging
+    - upgrade
+    - report

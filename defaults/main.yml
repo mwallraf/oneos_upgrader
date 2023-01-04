@@ -1,0 +1,18 @@
+---
+# defaults file for oneos_upgrader
+auto_configure_pre_requisites: true
+remove_unwanted_files: true
+upload_files: true
+upgrade_router: true
+verify_uploaded_files: true
+
+# timeouts
+timeout_wait_for_command: 300
+timeout_wait_for_install: 300
+timeout_wait_for_copy: 900
+timeout_wait_for_reboot: 600
+
+# upload defaults
+upload_done_for_os_file: false
+upload_done_for_boot_file: false
+upload_done_for_recovery_file: false

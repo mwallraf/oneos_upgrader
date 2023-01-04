@@ -1,0 +1,35 @@
+---
+# get info about the wanted OS,BOOT,RECOVERY files that should be uploaded
+
+# wanted os file stats
+- name: "SET FACT > get wanted os file stats"
+  ansible.builtin.stat:
+    path: "{{ software_path }}/{{ wanted_os_file }}"
+  when: wanted_os_file
+  register: output_wanted_os_file_stats
+
+- name: "SET FACT > wanted_os_file_stats"
+  ansible.builtin.set_fact:
+    wanted_os_file_stats: "{{ output_wanted_os_file_stats['stat'] | default() }}"
+
+# wanted boot file stats
+- name: "SET FACT > get wanted boot file stats"
+  ansible.builtin.stat:
+    path: "{{ software_path }}/{{ wanted_boot_file }}"
+  when: wanted_boot_file
+  register: output_wanted_boot_file_stats
+
+- name: "SET FACT > wanted_boot_file_stats"
+  ansible.builtin.set_fact:
+    wanted_boot_file_stats: "{{ output_wanted_boot_file_stats['stat'] | default() }}"
+
+# wanted recovery file stats
+- name: "SET FACT > get wanted recovery file stats"
+  ansible.builtin.stat:
+    path: "{{ software_path }}/{{ wanted_recovery_file }}"
+  when: wanted_recovery_file
+  register: output_wanted_recovery_file_stats
+
+- name: "SET FACT > wanted_recovery_file_stats"
+  ansible.builtin.set_fact:
+    wanted_recovery_file_stats: "{{ output_wanted_recovery_file_stats['stat'] | default() }}"
