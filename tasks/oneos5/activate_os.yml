@@ -1,0 +1,16 @@
+---
+
+- name: ACTIVATE OS > remove backup file if it exists
+  ansible.netcommon.cli_command:
+    command: "rm /BSA/binaries/{{ pre_check_system[0].SOFTWARE }}.backup"
+  when: pre_check_system is defined and (fact_ls_bsa_binaries | selectattr('FILE', 'eq', '{}.backup'.format(pre_check_system[0].SOFTWARE)) | length > 0)
+
+- name: ACTIVATE OS > replace active OS file with the new filename
+  ansible.netcommon.cli_command:
+    command: "{{ item }}"
+  loop:
+    - "mv /BSA/binaries/{{ fact_bsaboot[0].BOOTFILE }} /BSA/binaries/{{ pre_check_system[0].SOFTWARE }}.backup"
+    - "mv /BSA/binaries/{{ wanted_os_file }} /BSA/binaries/{{ fact_bsaboot[0].BOOTFILE }}"
+  when: fact_bsaboot is defined and pre_check_system is defined and wanted_os_file != ""
+  vars:
+    ansible_command_timeout: "{{ timeout_wait_for_command }}"

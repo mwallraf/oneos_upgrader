@@ -103,6 +103,7 @@ Playbook tasks:
 - connect and get facts
 - set extra facts to determine the status of the router and upgrade process
 - if there is no space on the device then old files will be removed
+  - re-calculate disk space
 - if there are any pre-config jobs then they will be implemented (ex enable SCP)
 - upload files if needed
   - if there is no space for all files then first the boot files will be copied

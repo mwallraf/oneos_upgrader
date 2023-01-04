@@ -5,6 +5,9 @@
 - name: "SET FACT > get wanted os file stats"
   ansible.builtin.stat:
     path: "{{ software_path }}/{{ wanted_os_file }}"
+    get_mime: false
+    get_checksum: false
+    get_attributes: false
   when: wanted_os_file
   register: output_wanted_os_file_stats
 
@@ -12,10 +15,20 @@
   ansible.builtin.set_fact:
     wanted_os_file_stats: "{{ output_wanted_os_file_stats['stat'] | default() }}"
 
+- name: "SET FACT > assert the wanted file exists"
+  ansible.builtin.assert:
+    that: wanted_os_file_stats.exists is true
+    success_msg: "OK: OS wanted file {{ wanted_os_file }} exists"
+    fail_msg: "ERROR: the OS wanted file {{ wanted_os_file }} does not exist"
+  when: wanted_os_file
+
 # wanted boot file stats
 - name: "SET FACT > get wanted boot file stats"
   ansible.builtin.stat:
     path: "{{ software_path }}/{{ wanted_boot_file }}"
+    get_mime: false
+    get_checksum: false
+    get_attributes: false
   when: wanted_boot_file
   register: output_wanted_boot_file_stats
 
@@ -23,13 +36,30 @@
   ansible.builtin.set_fact:
     wanted_boot_file_stats: "{{ output_wanted_boot_file_stats['stat'] | default() }}"
 
+- name: "SET FACT > assert the wanted boot exists"
+  ansible.builtin.assert:
+    that: wanted_boot_file_stats.exists is true
+    success_msg: "OK: OS wanted file {{ wanted_boot_file }} exists"
+    fail_msg: "ERROR: the OS wanted file {{ wanted_boot_file }} does not exist"
+  when: wanted_boot_file
+
 # wanted recovery file stats
 - name: "SET FACT > get wanted recovery file stats"
   ansible.builtin.stat:
     path: "{{ software_path }}/{{ wanted_recovery_file }}"
+    get_mime: false
+    get_checksum: false
+    get_attributes: false
   when: wanted_recovery_file
   register: output_wanted_recovery_file_stats
 
 - name: "SET FACT > wanted_recovery_file_stats"
   ansible.builtin.set_fact:
     wanted_recovery_file_stats: "{{ output_wanted_recovery_file_stats['stat'] | default() }}"
+
+- name: "SET FACT > assert the wanted recovery exists"
+  ansible.builtin.assert:
+    that: wanted_recovery_file_stats.exists is true
+    success_msg: "OK: OS wanted file {{ wanted_recovery_file }} exists"
+    fail_msg: "ERROR: the OS wanted file {{ wanted_recovery_file }} does not exist"
+  when: wanted_recovery_file

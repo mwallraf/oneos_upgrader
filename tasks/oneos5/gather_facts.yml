@@ -16,3 +16,12 @@
       name: ansible.utils.textfsm
       template_path: "{{ role_path }}/templates/oneos_ls.textfsm"
     set_fact: fact_ls_bsa_binaries
+
+- name: "GATHER FACTS > show soft-file info OneOs"
+  ansible.utils.cli_parse:
+    command: "show soft-file info /BSA/binaries/{{ fact_bsaboot[0].BOOTFILE }}"
+    parser:
+      name: ansible.utils.textfsm
+      template_path: "{{ role_path }}/templates/oneos_show_soft-file.textfsm"
+    set_fact: fact_show_soft_file_os
+  when: fact_bsaboot

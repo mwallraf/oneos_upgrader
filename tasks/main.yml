@@ -6,7 +6,7 @@
     file: "gather_facts.yml"
   tags:
     - always
-
+    
 - name: "MAIN > get wanted file stats"
   import_tasks:
     file: "wanted_file_stats.yml"
@@ -70,7 +70,15 @@
     - staging
     - upgrade
     - upload
-  when: upload_files is true and (upload_required_boot_file is true or upload_required_os_file is true or upload_required_recovery_file is true)
+  when: upload_files is true and upload_required is true
+
+# activate the OS
+- name: "MAIN > upgrade router"
+  import_tasks:
+    file: "upgrade_router.yml"
+  tags:
+    - upgrade
+  when: upgrade_router is true and upgrade_required is true
 
 # upgrade the router
 - name: "MAIN > upgrade router"
@@ -78,7 +86,7 @@
     file: "upgrade_router.yml"
   tags:
     - upgrade
-  when: upgrade_router is true and (upgrade_required_for_boot is true or upgrade_required_for_os is true or upgrade_required_for_recovery is true)
+  when: upgrade_router is true and upgrade_required is true
 
 - name: "MAIN > run post-check tasks"
   import_tasks: post_upgrade_checks.yml

@@ -7,3 +7,4 @@
     disk_space_sufficient_for_recovery_file: "{{ none if (fact_memory is not defined) else true if (fact_memory['USER_PARTITION_FREE']|int > disk_space_required_recovery_file|int) else false }}"
     disk_space_sufficient_for_boot_and_recovery_files: "{{ none if (fact_memory is not defined) else true if fact_memory['USER_PARTITION_FREE']|int > disk_space_required_boot_and_recovery_file|int else false }}"
     disk_space_sufficient_for_all_files: "{{ none if (fact_memory is not defined) else true if fact_memory['USER_PARTITION_FREE']|int > disk_space_required_total|int else false }}"
+

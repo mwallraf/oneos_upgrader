@@ -6,11 +6,12 @@
 #        - if the file equals to fact_bsaboot.BOOTFILE
 
 - block:
+    # remove all old files except the currently running OS or the files we want to upload
     - name: REMOVE FILES > remove old files if there is not sufficient disk space
       ansible.netcommon.cli_command:
         command: "rm /BSA/binaries/{{ item['FILE'] }}"
-      when: "not ( (fact_bsaboot is defined and fact_bsaboot['BOOTFILE']|default('--') == item['FILE']) or (wanted_boot_file == item['FILE']) or (wanted_os_file == item['FILE']) or (wanted_recovery_file == item['FILE']) )"
-      loop: "{{ fact_ls_bsa_binaries }}"
+      when: "fact_ls_bsa_binaries is defined"
+      loop: "{{ fact_ls_bsa_binaries | rejectattr('FILE', 'eq', fact_bsaboot[0].BOOTFILE|default('--')) | rejectattr('FILE', 'eq', wanted_boot_file|default('---')) | rejectattr('FILE', 'eq', wanted_os_file|default('---')) | rejectattr('FILE', 'eq', wanted_recovery_file|default('---')) }}"
       vars:
         ansible_command_timeout: "{{ timeout_wait_for_command }}"
 
