@@ -22,6 +22,7 @@
         ansible_command_timeout: "{{ timeout_wait_for_copy }}"
       when: upload_required_boot_file is true
 
+    # verify the boot image
     - block:
         - name: "UPLOAD FILES > verify boot image"
           ansible.netcommon.cli_command:
@@ -51,6 +52,7 @@
         ansible_command_timeout: "{{ timeout_wait_for_copy }}"
       when: upload_required_recovery_file is true
 
+    # verify the recovery image
     - block:
         - name: "UPLOAD FILES > verify recovery image"
           ansible.netcommon.cli_command:
@@ -73,6 +75,7 @@
 
   when: disk_space_sufficient_for_boot_and_recovery_files is true and (upload_required_boot_file is true or upload_required_recovery_file is true)
 
+# upload the OS files - only if possible, updating boot + recovery has priority
 - name: "UPLOAD FILES > assert that there is enough disk space for uploading the software file"
   ansible.builtin.assert:
     that: "disk_space_sufficient_for_all_files is true"
@@ -90,6 +93,7 @@
       vars:
         ansible_command_timeout: "{{ timeout_wait_for_copy }}"
 
+    # upload the OS files
     - block:
         - name: "UPLOAD FILES > verify OS image"
           ansible.netcommon.cli_command:

@@ -46,13 +46,17 @@
 
 # calculate is_staged:
 # ONEOS5: true if the boot image contains the wanted version but the current boot version is not yet set to the wanted version
-- name: "SET FACT > is_staged for ONEOS5"
+- name: "SET FACT > is_staged for ONEOS 5"
   ansible.builtin.set_fact:
     is_staged: "{{ true if (wanted_os_version is defined and wanted_os_version == fact_show_soft_file_os[0].SOFTWARE_VERSION and wanted_os_version != pre_check_system[0].SOFTWARE) else false }}"
   when: fact_show_soft_file_os is defined
 
 # ONEOS6: true if the primary bank contains the wanted_os_version but current version is not yet set to the wanted version
-- name: "SET FACT > is_staged for ONEOS5"
+- name: "SET FACT > is_staged for ONEOS 6"
   ansible.builtin.set_fact:
     is_staged: "{{ true if (os_is_in_active_software_bank is true and wanted_os_version != pre_check_system[0].SOFTWARE) else false }}"
   when: fact_software_image is defined
+
+- name: "SET FACT > initialize upgraded_finished"
+  ansible.builtin.set_fact:
+    upgraded_finished: "{{ false }}"

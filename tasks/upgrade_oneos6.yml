@@ -1,0 +1,274 @@
+---
+# upgrade the router, this may be in multiple steps:
+#  - upgrade BOOT
+#  - upgrade RECOVERY
+#  - upgrade OS
+
+# set facts to make it easier to know if we're ready for upgrade
+- name: "UPGRADE ROUTER > set facts to indicate if we're ready for upgrade"
+  ansible.builtin.set_fact:
+    ready_for_upgrading_boot: "{{ true if upgrade_required_for_boot is true and (upload_required_boot_file is false or (upload_done_for_boot_file is defined and upload_done_for_boot_file is true)) else false }}"
+    ready_for_upgrading_recovery: "{{ true if upgrade_required_for_recovery is true and (upload_required_recovery_file is false or (upload_done_for_recovery_file is defined and upload_done_for_recovery_file is true)) else false }}"
+    ready_for_upgrading_os: "{{ true if upgrade_required_for_os is true and (upload_required_os_file is false or (upload_done_for_os_file is defined and upload_done_for_os_file is true)) else false }}"
+
+### UPGRADE BOOT IMAGE
+- block:
+    - name: UPGRADE ROUTER > upgrade BOOT
+      ansible.builtin.debug:
+        msg: "yes - we will upgrade the BOOT now"
+
+    # if upgrade needed for BOOT and ready_for_upgrading_boot
+    # => do the boot upgrade
+    #  set:   upgrade_done_boot
+    - name: "UPGRADE ROUTER > upgrade BOOT image"
+      ansible.netcommon.cli_command:
+        command: "boot flash update /BSA/binaries/{{wanted_boot_file }}"
+        prompt: "Continue with installation"
+        answer: "y"
+      register: output
+      vars:
+        ansible_command_timeout: "{{ timeout_wait_for_install }}"
+
+    - name: "UPGRADE ROUTER > assert BOOT image is installed correctly"
+      ansible.builtin.assert:
+        that: "'boot flash update is OK'.lower() is in output.stdout.lower()"
+        success_msg: "BOOT image has been installed correctly, rebooting now"
+        fail_msg: "BOOT image could not be installed correctly - ABORT"
+
+    - name: "UPGRADE ROUTER > reboot to enable BOOT image"
+      import_tasks:
+        file: "reboot.yml"
+
+    - name: "UPGRADE ROUTER > verify BOOT version after upgrade"
+      import_tasks:
+        file: "post_upgrade_checks.yml"
+
+    - name: "UPGRADE ROUTER > assert BOOT version is correct after reboot"
+      ansible.builtin.assert:
+        that: "post_check_system[0].BOOT_VERSION == wanted_boot_version"
+        success_msg: "BOOT image has been verified after reboot, all OK"
+        fail_msg: "BOOT image was not upgraded correctly, abort upgrade process"
+
+    - name: "UPGRADE ROUTER > set upgrade_done_boot"
+      ansible.builtin.set_fact:
+        upgrade_done_boot: "{{ true }}"
+
+  when:
+    - ready_for_upgrading_boot is true
+
+
+### RECOVERY IMAGE
+- block:
+
+    - name: UPGRADE ROUTER > upgrade RECOVERY
+      ansible.builtin.debug:
+        msg: "yes - we will upgrade the RECOVERY now"
+
+    # if upgrade needed for RECOVERY and ready_for_upgrading_Recovery
+    # => do the recovery upgrade
+    #  set:   upgrade_done_recovery
+    - name: "UPGRADE ROUTER > upgrade RECOVERY image"
+      ansible.netcommon.cli_command:
+        command: "boot flash update /BSA/binaries/{{wanted_recovery_file }}"
+        prompt: "Continue with installation"
+        answer: "y"
+      register: output
+      vars:
+        ansible_command_timeout: "{{ timeout_wait_for_install }}"
+
+    - name: "UPGRADE ROUTER > assert RECOVERY image is installed correctly"
+      ansible.builtin.assert:
+        that: "'ROM file successfully installed'.lower() is in output.stdout.lower()"
+        success_msg: "RECOVERY image has been installed correctly, rebooting now"
+        fail_msg: "RECOVERY image could not be installed correctly - ABORT"
+
+    - name: "UPGRADE ROUTER > reboot to enable RECOVERY image"
+      import_tasks:
+        file: "reboot.yml"
+
+    - name: "UPGRADE ROUTER > verify RECOVERY version after upgrade"
+      import_tasks:
+        file: "post_upgrade_checks.yml"
+
+    - name: "UPGRADE ROUTER > assert RECOVERY version is correct after reboot"
+      ansible.builtin.assert:
+        that: "post_check_system[0].RECOVERY_VERSION == wanted_recovery_version"
+        success_msg: "RECOVERY image has been verified after reboot, all OK"
+        fail_msg: "RECOVERY image was not upgraded correctly, abort upgrade process"
+
+    - name: "UPGRADE ROUTER > set upgrade_done_recovery"
+      ansible.builtin.set_fact:
+        upgrade_done_recovery: "{{ true }}"
+
+  when:
+    - ready_for_upgrading_recovery is true
+    - ready_for_upgrading_boot is false or upgrade_done_boot is true
+
+
+
+
+### IN CASE THERE WAS NOT ENOUGH DISK SPACE FOR ALL FILES: 
+### RE-CHECK THE FILE SYSTEM AND REMOVE BOOT+RECOVERY
+### AFTER THOSE UPGRADES WERE FINISHED
+### Actions:
+###   remove all files
+###   upload os file
+###   re-calculate:     ready_for_upgrading_os
+- block:
+
+    - name: "UPGRADE ROUTER > get all binary files"
+      ansible.utils.cli_parse:
+        command: ls -l /BSA/binaries
+        parser:
+          name: ansible.utils.textfsm
+          template_path: "{{ role_path }}/templates/oneos_ls.textfsm"
+        set_fact: fact_ls_bsa_binaries
+
+    # remove all old files except the currently running OS or the files we want to upload
+    - name: UPGRADE ROUTER > remove old files if there is not sufficient disk space
+      ansible.netcommon.cli_command:
+        command: "rm /BSA/binaries/{{ item['FILE'] }}"
+      when: "fact_ls_bsa_binaries is defined"
+      loop: "{{ fact_ls_bsa_binaries | rejectattr('FILE', 'eq', wanted_os_file|default('---')) }}"
+      vars:
+        ansible_command_timeout: "{{ timeout_wait_for_command }}"
+
+    - name: "UPGRADE ROUTER > run disk and memory facts"
+      import_tasks:
+        file: "gather_disk_facts.yml"
+
+    - name: "UPGRADE ROUTER > set calculated disk and memory facts"
+      import_tasks:
+        file: "set_calculated_disk_facts.yml"
+
+    - block:
+      # TODO: this is duplicate code from upload_files.html
+      - name: "UPGRADE ROUTER > upload the software image file (timeout = {{ timeout_wait_for_copy }})"
+        ansible.netcommon.net_put:
+          src: "{{ software_path }}/{{ wanted_os_file }}"
+          dest: "/BSA/binaries/{{ wanted_os_file }}"
+        vars:
+          ansible_command_timeout: "{{ timeout_wait_for_copy }}"
+
+      - name: "UPGRADE ROUTER > verify OS image"
+        ansible.netcommon.cli_command:
+          command: "show soft-file info /BSA/binaries/{{ wanted_os_file }}"
+        register: output
+        vars:
+          ansible_command_timeout: "{{ timeout_wait_for_command }}"
+
+      - name: "UPGRADE ROUTER > assert OS image verification"
+        ansible.builtin.assert:
+          that: "'file is ok' in output.stdout.lower()"
+          success_msg: "OK: OS file has been uploaded and verified"
+          fail_msg: "ERROR: the OS file has been uploaded but is invalid - abort"
+
+      - name: "UPGRADE ROUTER > set upload_done_for_os_file"
+        ansible.builtin.set_fact:
+          upload_done_for_os_file: "{{ true }}"
+
+      - name: "UPGRADE ROUTER > re-calculate ready_for_upgrading_os"
+        ansible.builtin.set_fact:
+          ready_for_upgrading_os: "{{ true if (upgrade_required_for_os is true and upload_done_for_os_file is true) else false }}"
+
+      when: disk_space_sufficient_for_os_file is true
+
+  when: 
+    - disk_space_sufficient_for_all_files is false
+    - upgrade_required_for_os is true and ready_for_upgrading_os is false
+    - upload_required_os_file is true and upload_done_for_os_file is false
+    - (upgrade_required_for_boot is true and upgrade_done_boot is true) or (upgrade_required_recovery is true and upgrade_done_recovery is true)
+
+
+### OS IMAGE
+- block:
+    - name: UPGRADE ROUTER > upgrade OS
+      ansible.builtin.debug:
+        msg: "yes - we will upgrade the OS now"
+
+    - block:
+
+      # if upgrade needed for RECOVERY and ready_for_upgrading_Recovery
+      # => do the recovery upgrade
+      #  set:   upgrade_done_recovery
+      - name: "UPGRADE ROUTER > upgrade OS image"
+        ansible.netcommon.cli_command:
+          command: "software-image install /BSA/binaries/{{ wanted_os_file }} alternate"
+          prompt: "Continue with installation"
+          answer: "y"
+        register: output
+        vars:
+          ansible_command_timeout: "{{ timeout_wait_for_install }}"
+
+      - name: "UPGRADE ROUTER > assert OS image is installed correctly"
+        ansible.builtin.assert:
+          that: "'Software has been installed in alternate bank'.lower() is in output.stdout.lower()"
+          success_msg: "OS image has been installed correctly, rebooting now"
+          fail_msg: "OS image could not be installed correctly - ABORT"
+
+      - name: "UPGRADE ROUTER > set fact os_is_in_alternate_software_bank to true"
+        ansible.builtin.set_fact:
+          os_is_in_alternate_software_bank: "{{ true }}"
+
+      when: not (os_is_in_active_software_bank|bool is true or os_is_in_alternate_software_bank|bool is true)
+
+
+    #  swap partitions
+    - block:
+
+      - name: "UPGRADE ROUTER > swap partitions"
+        ansible.netcommon.cli_command:
+          command: "software-image revert keep"
+          prompt: "OK to proceed"
+          answer: "y"
+        register: output
+        vars:
+          ansible_command_timeout: "{{ timeout_wait_for_install }}"
+
+      - name: "UPGRADE ROUTER > assert that the bank is swapped"
+        ansible.builtin.assert:
+          that: "'New active software will be started on next reboot'.lower() is in output.stdout.lower()"
+          success_msg: "Software primary/secondary banks are swapped"
+          fail_msg: "Software primary/secondary banks cannot be swapped - ABORT"
+
+      - name: "UPGRADE ROUTER > set fact is_staged to true"
+        ansible.builtin.set_fact:
+          is_staged: "{{ true }}"
+
+      when: os_is_in_alternate_software_bank|bool is true
+
+    - block:
+
+      - name: "UPGRADE ROUTER > reboot to enable OS image"
+        import_tasks:
+          file: "reboot.yml"
+
+      - name: "UPGRADE ROUTER > verify OS version after upgrade"
+        import_tasks:
+          file: "post_upgrade_checks.yml"
+
+      - name: "UPGRADE ROUTER > assert OS version is correct after reboot"
+        ansible.builtin.assert:
+          that: "post_check_system[0].SOFTWARE == wanted_os_version"
+          success_msg: "OS image has been verified after reboot, all OK"
+          fail_msg: "OS image was not upgraded correctly, abort upgrade process"
+
+      - name: "UPGRADE ROUTER > set upgrade_done_os"
+        ansible.builtin.set_fact:
+          upgrade_done_os: "{{ true }}"
+
+      - name: "UPGRADE ROUTER > set upgrade_done_os"
+        ansible.builtin.set_fact:
+          is_staged: "{{ false }}"
+
+      when: is_staged|bool is true
+
+  when:
+    - ready_for_upgrading_os is true
+    - ready_for_upgrading_boot is false or upgrade_done_boot is true
+    - ready_for_upgrading_recovery is false or upgrade_done_recovery is true
+
+
+- name: "UPGRADE ROUTER > set upgraded_finished"
+  ansible.builtin.set_fact:
+    upgraded_finished: "{{ true if (upgrade_required_for_recovery is false or (upgrade_required_for_recovery is true and upgrade_done_recovery is true)) and (upgrade_required_for_boot is false or (upgrade_required_for_boot is true and upgrade_done_boot is true)) and (upgrade_required_for_os is false or (upgrade_required_for_os is true and upgrade_done_os is true)) else false }}"

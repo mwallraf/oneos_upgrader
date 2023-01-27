@@ -8,14 +8,18 @@ OneOS 6 has primary + redundant software banks and each bank may have a differen
 
 This role supports both versions automatically.
 
+## Failures
+
+In case of a failure then the process will be aborted for a host, this could mean that the report will not be generated. Failed hosts are also not displayed in the report.
+
 ## Role tags
 
-There are 4 tags that you can use to define the mode of the role:
+There are 4 tags that you can use to define the mode of the role, if no tags are specified then a complete upgrade will be performed:
 
-- report: does pre-checks and reports the current status and software compliancy
-- staging: does pre-checks and software installs but no post-checks or reboots
-- reboot: reboots and does post-upgrade checks but without pre-checks are staging, to be used if you have done the staging beforehand
-- upgrade (default): combines staging + reboot
+- report: only run the pre-checks and generate a status report (by default this tag will always be performed)
+- staging: performs all possible tasks to prepare an upgrade but will not cause any outage, in most cases this means that only a reboot is required after the staging process
+- upload: only performs the file upload process, only files required for the upgrade will be uploaded
+- upgrade: performs all necessary steps required to finish the upgrade
 
 ## Default role variables
 

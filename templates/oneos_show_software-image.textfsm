@@ -14,5 +14,6 @@ BANK
   ^Header\schecksum\s+:\s${CHECKSUM}
   ^-+ -> Continue.Record
   ^-+\s${BANK}\sbank\s-+ -> BANK
+  ^Installation\sstatus.*
   ^$$
   ^. -> Error
