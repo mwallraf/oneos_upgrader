@@ -8,6 +8,11 @@ OneOS 6 has primary + redundant software banks and each bank may have a differen
 
 This role supports both versions automatically.
 
+## Requirements
+
+* ansible.utils
+* mwallraf.ekinops
+
 ## Failures
 
 In case of a failure then the process will be aborted for a host, this could mean that the report will not be generated. Failed hosts are also not displayed in the report.

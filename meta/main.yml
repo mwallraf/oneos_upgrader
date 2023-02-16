@@ -48,4 +48,6 @@ galaxy_info:
     - network
     - upgrade
 
-dependencies: []
+dependencies:
+  - name: ansible.utils
+  - name: mwallraf.ekinops
