@@ -56,6 +56,7 @@
   tags:
     - staging
     - upgrade
+    - upload
   when: auto_configure_pre_requisites is true
 
 # remove unnecessary files if the global switch is true and if there is not enough disk space to copy all necessary files

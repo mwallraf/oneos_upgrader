@@ -16,3 +16,8 @@ timeout_wait_for_reboot: 600
 upload_done_for_os_file: false
 upload_done_for_boot_file: false
 upload_done_for_recovery_file: false
+
+# max ssh sessions
+# when uploading files this could be an issue if the number is too low
+oneos5_ip_ssh_max_sessions: 5
+oneos6_ip_ssh_max_sessions: 10

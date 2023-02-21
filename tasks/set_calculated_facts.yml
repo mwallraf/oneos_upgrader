@@ -1,6 +1,14 @@
 ---
 # calculate facts and statuses
 
+- name: "SET FACT > have_os_version (5 or 6)"
+  ansible.builtin.set_fact:
+    have_os_version: "{{ pre_check_system[0].VERSION }}"
+
+- name: "SET FACT > wanted max ip ssh connections"
+  ansible.builtin.set_fact:
+    wanted_ip_ssh_max_sessions: "{{ oneos5_ip_ssh_max_sessions if have_os_version == '5' else oneos6_ip_ssh_max_sessions }}"
+
 # indicates if the upgrades are required - always false if the version is not defined
 - name: "SET FACT > calculate if upgrades are required"
   ansible.builtin.set_fact:

@@ -7,3 +7,9 @@
     diff_replace: config
   when: scp_is_enabled is defined and scp_is_enabled is false
   ignore_errors: true
+
+- name: CONFIGURE PRE-REQUISITES > increase SSH MAX-sessions
+  ansible.netcommon.cli_config:
+    config: "ip ssh max-sessions {{ wanted_ip_ssh_max_sessions }}"
+    diff_replace: config
+  ignore_errors: true
