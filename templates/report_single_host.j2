@@ -1,4 +1,4 @@
-hostname: {{ hostname }}
+hostname: {{ have_hostname }}
 inventory_name: {{ inventory_hostname }}
 oneos_version: oneos v{{ ansible_facts.pre_check_system[0].VERSION|default() }}
 wanted_os_version: {{ wanted_os_version|default() }}

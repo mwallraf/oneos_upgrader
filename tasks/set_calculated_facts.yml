@@ -1,6 +1,10 @@
 ---
 # calculate facts and statuses
 
+- name: "SET FACT > have_hostname"
+  ansible.builtin.set_fact:
+    have_hostname: "{{ fact_hostname[0].HOSTNAME|default('-unknown-') }}"
+
 - name: "SET FACT > have_os_version (5 or 6)"
   ansible.builtin.set_fact:
     have_os_version: "{{ pre_check_system[0].VERSION }}"

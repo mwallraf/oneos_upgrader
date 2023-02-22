@@ -104,9 +104,9 @@
 #     - postcheck
 #     - upgrade
 
-- name: "MAIN > run reporting tasks"
-  import_tasks: report.yml
-  tags:
-    - staging
-    - upgrade
-    - report
+# - name: "MAIN > run reporting tasks"
+#   import_tasks: report.yml
+#   tags:
+#     - staging
+#     - upgrade
+#     - report

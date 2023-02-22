@@ -47,7 +47,7 @@
 {{ header | join(';') }}
 {% for host in ansible_play_hosts | map('extract', hostvars) | list %}
 {% set row = [
-    host.hostname,
+    host.have_hostname,
     host.inventory_hostname,
     host.upgrade_process_failed|default(False),
     host.upgrade_required|default(),
