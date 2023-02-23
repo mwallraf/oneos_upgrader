@@ -10,10 +10,14 @@
     get_attributes: false
   when: wanted_os_file
   register: output_wanted_os_file_stats
+  run_once: true
 
 - name: "SET FACT > wanted_os_file_stats"
   ansible.builtin.set_fact:
     wanted_os_file_stats: "{{ output_wanted_os_file_stats['stat'] | default() }}"
+  delegate_to: "{{ item }}"
+  with_items: "{{ play_hosts }}"
+  run_once: true
 
 - name: "SET FACT > assert the wanted file exists"
   ansible.builtin.assert:
@@ -21,6 +25,7 @@
     success_msg: "OK: OS wanted file {{ wanted_os_file }} exists"
     fail_msg: "ERROR: the OS wanted file {{ wanted_os_file }} does not exist"
   when: wanted_os_file
+  run_once: true
 
 # wanted boot file stats
 - name: "SET FACT > get wanted boot file stats"
@@ -31,10 +36,14 @@
     get_attributes: false
   when: wanted_boot_file
   register: output_wanted_boot_file_stats
+  run_once: true
 
 - name: "SET FACT > wanted_boot_file_stats"
   ansible.builtin.set_fact:
     wanted_boot_file_stats: "{{ output_wanted_boot_file_stats['stat'] | default() }}"
+  delegate_to: "{{ item }}"
+  with_items: "{{ play_hosts }}"
+  run_once: true
 
 - name: "SET FACT > assert the wanted boot exists"
   ansible.builtin.assert:
@@ -42,6 +51,7 @@
     success_msg: "OK: OS wanted file {{ wanted_boot_file }} exists"
     fail_msg: "ERROR: the OS wanted file {{ wanted_boot_file }} does not exist"
   when: wanted_boot_file
+  run_once: true
 
 # wanted recovery file stats
 - name: "SET FACT > get wanted recovery file stats"
@@ -52,10 +62,14 @@
     get_attributes: false
   when: wanted_recovery_file
   register: output_wanted_recovery_file_stats
+  run_once: true
 
 - name: "SET FACT > wanted_recovery_file_stats"
   ansible.builtin.set_fact:
     wanted_recovery_file_stats: "{{ output_wanted_recovery_file_stats['stat'] | default() }}"
+  delegate_to: "{{ item }}"
+  with_items: "{{ play_hosts }}"
+  run_once: true
 
 - name: "SET FACT > assert the wanted recovery exists"
   ansible.builtin.assert:
@@ -63,3 +77,4 @@
     success_msg: "OK: OS wanted file {{ wanted_recovery_file }} exists"
     fail_msg: "ERROR: the OS wanted file {{ wanted_recovery_file }} does not exist"
   when: wanted_recovery_file
+  run_once: true
