@@ -5,6 +5,7 @@ remove_unwanted_files: true
 upload_files: true
 upgrade_router: true
 verify_uploaded_files: true
+wanted_recovery_file: ""
 
 # timeouts
 timeout_wait_for_command: 300

@@ -13,3 +13,4 @@
     config: "ip ssh max-sessions {{ wanted_ip_ssh_max_sessions }}"
     diff_replace: config
   ignore_errors: true
+  when: upload_required is true
