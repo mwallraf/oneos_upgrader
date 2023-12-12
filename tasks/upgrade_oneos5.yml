@@ -96,7 +96,7 @@
 
       - name: "UPGRADE ROUTER > pause 30 seconds, wait for tacacs"
         ansible.builtin.pause:
-          seconds: 30
+          seconds: "{{ timeout_wait_for_tacacs }}"
 
       - name: "UPGRADE ROUTER > verify OS version after upgrade"
         import_tasks:
