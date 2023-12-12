@@ -12,6 +12,7 @@ timeout_wait_for_command: 300
 timeout_wait_for_install: 300
 timeout_wait_for_copy: 900
 timeout_wait_for_reboot: 600
+timeout_wait_for_tacacs: 30
 
 # upload defaults
 upload_done_for_os_file: false
