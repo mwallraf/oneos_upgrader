@@ -41,7 +41,7 @@
           ansible.builtin.set_fact:
             upload_done_for_boot_file: "{{ true }}"
 
-      when: verify_uploaded_files is true
+      when: upload_required_boot_file is true and verify_uploaded_files is true
 
     # upload the recovery image
     - name: "UPLOAD FILES > upload the recovery image file (timeout = {{ timeout_wait_for_copy }})"
@@ -71,7 +71,7 @@
           ansible.builtin.set_fact:
             upload_done_for_recovery_file: "{{ true }}"
 
-      when: verify_uploaded_files is true
+      when: upload_required_recovery_file is true and verify_uploaded_files is true
 
   when: disk_space_sufficient_for_boot_and_recovery_files is true and (upload_required_boot_file is true or upload_required_recovery_file is true)
 
